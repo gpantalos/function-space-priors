@@ -1,8 +1,10 @@
 import unittest
+
 import numpy as np
 
 from experiments.data_sim import SinusoidDataset, SinusoidNonstationaryDataset, MNISTRegressionDataset, \
     GPFunctionsDataset, CauchyDataset
+
 
 class TestSinusoidDataset(unittest.TestCase):
 
@@ -27,12 +29,12 @@ class TestSinusoidDataset(unittest.TestCase):
 
     def test_no_noise(self):
         dataset = SinusoidDataset(
-                 amp_low=1.0, amp_high=1.0,
-                 period_low=1.0, period_high=1.0,
-                 x_shift_mean=0.0, x_shift_std=0.0,
-                 y_shift_mean=0.0, y_shift_std=0.0,
-                 slope_mean=1.0, slope_std=0.00,
-                 noise_std=0.00, x_low=5, x_high=-5,)
+            amp_low=1.0, amp_high=1.0,
+            period_low=1.0, period_high=1.0,
+            x_shift_mean=0.0, x_shift_std=0.0,
+            y_shift_mean=0.0, y_shift_std=0.0,
+            slope_mean=1.0, slope_std=0.00,
+            noise_std=0.00, x_low=5, x_high=-5, )
 
         data_tuples = dataset.generate_meta_train_data(n_tasks=2, n_samples=500)
 
@@ -44,7 +46,6 @@ class TestSinusoidDataset(unittest.TestCase):
             abs_diff = np.mean(np.abs(y_true - y_train))
             self.assertAlmostEqual(abs_diff, 0.0)
 
-
     def test_context_test_consistency(self):
         dataset = SinusoidDataset(noise_std=0.00, x_low=1, x_high=1)
 
@@ -54,6 +55,7 @@ class TestSinusoidDataset(unittest.TestCase):
             x_context, y_context, x_test, y_test = data_tuple
             assert np.array_equal(y_context, y_test)
             print(y_context, y_test)
+
 
 class TestSinusoidNonstationaryDataset(unittest.TestCase):
 
@@ -75,6 +77,7 @@ class TestSinusoidNonstationaryDataset(unittest.TestCase):
         for train_tuple_1, train_tuple_2 in zip(data_train_1, data_train_2):
             for data_array_1, data_array_2 in zip(train_tuple_1, train_tuple_2):
                 assert np.array_equal(data_array_1, data_array_2)
+
 
 class TestGPFunctionsDataset(unittest.TestCase):
 
@@ -128,7 +131,7 @@ class TestMNISTRegressionDataset(unittest.TestCase):
                 for n_samples_test in [-1, 23]:
 
                     data_test = dataset.generate_meta_test_data(n_tasks=n_tasks, n_samples_context=n_samples_context,
-                                                    n_samples_test=n_samples_test)
+                                                                n_samples_test=n_samples_test)
 
                     assert len(data_test) == n_tasks
 
@@ -137,7 +140,7 @@ class TestMNISTRegressionDataset(unittest.TestCase):
                         assert x_context.shape[1] == x_test.shape[1] == 2
 
                     if n_samples_test == -1:
-                        assert x_context.shape[0] + x_test.shape[0] == 28**2
+                        assert x_context.shape[0] + x_test.shape[0] == 28 ** 2
 
     def test_output_shapes_generate_train(self):
         rds = np.random.RandomState(123)

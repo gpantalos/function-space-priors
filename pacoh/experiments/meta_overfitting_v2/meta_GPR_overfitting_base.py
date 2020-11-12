@@ -5,14 +5,12 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from absl import flags
 from absl import app
 import numpy as np
 from pprint import pprint
-from meta_learn.util import get_logger
 from experiments.util import *
 from experiments.data_sim import SinusoidNonstationaryDataset, MNISTRegressionDataset, \
-    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset, provide_data
+    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset
 from meta_learn.GPR_meta_mll import GPRegressionMetaLearned
 
 import torch
@@ -121,6 +119,7 @@ def main(argv):
     pprint(results_dict)
 
     save_results(results_dict, exp_dir, log=True)
+
 
 if __name__ == '__main__':
     app.run(main)

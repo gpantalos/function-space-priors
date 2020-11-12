@@ -1,6 +1,7 @@
+import os
+
 import numpy as np
 import pandas as pd
-import os
 
 N_TRAIN_TASKS = 20
 
@@ -11,7 +12,6 @@ EXP_DIR = os.path.join(DATA_DIR, 'baseline_comparison')
 CSV = os.path.join(EXP_DIR, 'baseline_comparison_all_Jan22_2020.csv')
 
 df_orig = pd.read_csv(CSV)
-
 
 datasets = list(set(df_orig['dataset']))
 learners = list(set(df_orig['learner']))

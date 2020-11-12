@@ -1,5 +1,6 @@
-import numpy as np
 import os
+
+import numpy as np
 
 X_LOW = -5
 X_HIGH = 5

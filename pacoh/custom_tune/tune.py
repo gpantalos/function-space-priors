@@ -4,24 +4,24 @@ from __future__ import print_function
 
 import logging
 import time
-import six
 
+import six
+from ray.tune.analysis import ExperimentAnalysis
 from ray.tune.error import TuneError
 from ray.tune.experiment import convert_to_experiment_list, Experiment
-from ray.tune.analysis import ExperimentAnalysis
-from ray.tune.suggest import BasicVariantGenerator
-from ray.tune.trial import Trial, DEBUG_PRINT_INTERVAL
-from ray.tune.trainable import Trainable
+from ray.tune.progress_reporter import CLIReporter, JupyterNotebookReporter
 from ray.tune.ray_trial_executor import RayTrialExecutor
 from ray.tune.registry import get_trainable_cls
-from ray.tune.syncer import wait_for_sync
-from ray.tune.progress_reporter import CLIReporter, JupyterNotebookReporter
 from ray.tune.schedulers import (HyperBandScheduler, AsyncHyperBandScheduler,
                                  FIFOScheduler, MedianStoppingRule)
+from ray.tune.suggest import BasicVariantGenerator
+from ray.tune.syncer import wait_for_sync
+from ray.tune.trainable import Trainable
+from ray.tune.trial import Trial, DEBUG_PRINT_INTERVAL
 from ray.tune.web_server import TuneServer
 
-
 from custom_tune.trial_runner import TrialRunner
+
 logger = logging.getLogger(__name__)
 
 _SCHEDULERS = {
@@ -52,8 +52,8 @@ def _check_default_resources_override(run_identifier):
         return True
     trainable_cls = get_trainable_cls(run_identifier)
     return hasattr(trainable_cls, "default_resource_request") and (
-        trainable_cls.default_resource_request.__code__ !=
-        Trainable.default_resource_request.__code__)
+            trainable_cls.default_resource_request.__code__ !=
+            Trainable.default_resource_request.__code__)
 
 
 def run(run_or_experiment,

@@ -1,12 +1,9 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import logging
+import pickle
+from functools import partial
 
 import numpy as np
-import copy
-import logging
-from functools import partial
-import pickle
+
 try:
     hyperopt_logger = logging.getLogger("hyperopt")
     hyperopt_logger.setLevel(logging.WARNING)
@@ -14,7 +11,6 @@ try:
 except ImportError:
     hpo = None
 
-from ray.tune.error import TuneError
 from ray.tune.suggest.suggestion import SuggestionAlgorithm
 
 import copy
@@ -26,7 +22,6 @@ from ray.tune.config_parser import create_trial_from_spec
 from ray.tune.suggest.variant_generator import format_vars, resolve_nested_dict
 
 logger = logging.getLogger(__name__)
-
 
 
 class HyperOptSearch(SuggestionAlgorithm):
@@ -150,7 +145,7 @@ class HyperOptSearch(SuggestionAlgorithm):
 
             # Get new suggestion from Hyperopt
             new_trials = self.algo(new_ids, self.domain, self._hpopt_trials,
-                                   self.rstate.randint(2**31 - 1))
+                                   self.rstate.randint(2 ** 31 - 1))
             self._hpopt_trials.insert_trial_docs(new_trials)
             self._hpopt_trials.refresh()
             new_trial = new_trials[0]

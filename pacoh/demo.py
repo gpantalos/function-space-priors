@@ -1,7 +1,8 @@
 import numpy as np
+from matplotlib import pyplot as plt
+
 from experiments.data_sim import SinusoidDataset
 from meta_learn import GPRegressionMetaLearned
-from matplotlib import pyplot as plt
 
 # Plot parameters
 plt.rcParams['scatter.marker'] = 'x'

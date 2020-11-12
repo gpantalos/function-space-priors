@@ -2,8 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import click
-from datetime import datetime
 import json
 import logging
 import os
@@ -11,20 +9,22 @@ import re
 import time
 import traceback
 import types
+from datetime import datetime
 
+import click
 import ray.cloudpickle as cloudpickle
 from ray.tune import TuneError
 from ray.tune.progress_reporter import trial_progress_str
 from ray.tune.ray_trial_executor import RayTrialExecutor
 from ray.tune.result import (TIME_THIS_ITER_S, RESULT_DUPLICATE,
                              SHOULD_CHECKPOINT)
-from ray.tune.syncer import get_cloud_syncer
-from ray.tune.trial import Checkpoint, Trial
 from ray.tune.schedulers import FIFOScheduler, TrialScheduler
 from ray.tune.suggest import BasicVariantGenerator
+from ray.tune.syncer import get_cloud_syncer
+from ray.tune.trial import Checkpoint, Trial
 from ray.tune.util import warn_if_slow, flatten_dict
-from ray.utils import binary_to_hex, hex_to_binary
 from ray.tune.web_server import TuneServer
+from ray.utils import binary_to_hex, hex_to_binary
 
 MAX_DEBUG_TRIALS = 20
 
@@ -300,7 +300,7 @@ class TrialRunner(object):
         logger.warning("".join([
             "Attempting to resume experiment from {}. ".format(
                 self._local_checkpoint_dir), "This feature is experimental, "
-            "and may not work with all search algorithms. ",
+                                             "and may not work with all search algorithms. ",
             "This will ignore any new changes to the specification."
         ]))
 
@@ -648,13 +648,13 @@ class TrialRunner(object):
         """
         state = self.__dict__.copy()
         for k in [
-                "_trials",
-                "_stop_queue",
-                "_server",
-                "_search_alg",
-                "_scheduler_alg",
-                "trial_executor",
-                "_syncer",
+            "_trials",
+            "_stop_queue",
+            "_server",
+            "_search_alg",
+            "_scheduler_alg",
+            "trial_executor",
+            "_syncer",
         ]:
             del state[k]
         state["launch_web_server"] = bool(self._server)

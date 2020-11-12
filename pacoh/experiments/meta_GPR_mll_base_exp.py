@@ -5,10 +5,8 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from absl import flags
 from absl import app
 import numpy as np
-from meta_learn.util import get_logger
 from experiments.util import *
 from experiments.data_sim import SinusoidNonstationaryDataset, MNISTRegressionDataset, \
     PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset, provide_data
@@ -108,6 +106,7 @@ def main(argv):
     }
     print(results_dict)
     save_results(results_dict, exp_dir, log=True)
+
 
 if __name__ == '__main__':
     app.run(main)

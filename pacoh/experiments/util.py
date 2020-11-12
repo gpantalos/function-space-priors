@@ -1,27 +1,27 @@
-import os
-import copy
-import json
-import hashlib
-import sys
-import glob
 import collections
+import copy
+import glob
+import hashlib
 import itertools
+import json
 import multiprocessing
+import os
+import sys
+
 import pandas as pd
 from absl import flags
+
 from meta_learn.util import get_logger
 
-
 DEFAULT_FLAGS = ['logtostderr', 'alsologtostderr', 'v', 'verbosity',
-                  'stderrthreshold', 'showprefixforinfo', 'run_with_pdb', 'pdb_post_mortem',
-                  'run_with_profiling', 'profile_file', 'use_cprofile_for_profiling',
-                  'only_check_args', '?', 'help', 'helpshort', 'helpfull', 'helpxml']
+                 'stderrthreshold', 'showprefixforinfo', 'run_with_pdb', 'pdb_post_mortem',
+                 'run_with_profiling', 'profile_file', 'use_cprofile_for_profiling',
+                 'only_check_args', '?', 'help', 'helpshort', 'helpfull', 'helpxml']
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data')
 
 
 def setup_exp_doc(exp_name, data_dir=None):
-
     # create dictionary of flags / hyperparams
     flags_dict = get_flags_dict()
     flags_dict['exp_name'] = exp_name
@@ -36,14 +36,15 @@ def setup_exp_doc(exp_name, data_dir=None):
     save_dict(flags_dict, os.path.join(exp_dir, 'config.json'))
 
     flags_table_str = dict_to_tabular_str(flags_dict)
-    logger.info(" ------ Starting experiment: %s ------ \n"%exp_name+\
-                "----------------------------------------\n"+\
-                "             Configuration              \n"+\
-                "----------------------------------------"+\
-                "%s"%flags_table_str+\
+    logger.info(" ------ Starting experiment: %s ------ \n" % exp_name + \
+                "----------------------------------------\n" + \
+                "             Configuration              \n" + \
+                "----------------------------------------" + \
+                "%s" % flags_table_str + \
                 "----------------------------------------\n")
 
     return logger, exp_dir
+
 
 def save_results(results_dict, exp_dir, log=True):
     results_file = os.path.join(exp_dir, 'results.json')
@@ -53,7 +54,7 @@ def save_results(results_dict, exp_dir, log=True):
         logger = get_logger(log_dir=exp_dir)
         results_table_str = dict_to_tabular_str(results_dict)
 
-        logger.info("\n"+
+        logger.info("\n" +
                     "----------------------------------------\n" + \
                     "                   Results              \n" + \
                     "----------------------------------------" + \
@@ -69,12 +70,14 @@ def create_exp_parent_dir(exp_name, data_dir=None):
         os.mkdir(exp_parent_dir)
     return exp_parent_dir
 
+
 def create_exp_dir(exp_name, task_hash, data_dir=None):
     exp_parent_dir = create_exp_parent_dir(exp_name, data_dir=data_dir)
     exp_dir = os.path.join(exp_parent_dir, str(task_hash))
     if not os.path.isdir(exp_dir):
         os.mkdir(exp_dir)
     return exp_dir
+
 
 def get_flags_dict():
     flags_dict = copy.deepcopy(flags.FLAGS.flag_values_dict())
@@ -84,12 +87,15 @@ def get_flags_dict():
 
     return flags_dict
 
+
 def hash_dict(dict):
     return hashlib.md5(str.encode((json.dumps(dict, sort_keys=True)))).hexdigest()
+
 
 def save_dict(dict, dump_path):
     with open(dump_path, 'w') as json_file:
         json.dump(dict, json_file, indent=4, sort_keys=True)
+
 
 def dict_to_tabular_str(dict):
     s = "\n"
@@ -120,7 +126,7 @@ def collect_exp_results(exp_name, verbose=True):
     if verbose:
         logger = get_logger()
         logger.info('Parsed results %s - found %i folders with results and %i folders without results'
-                    %(exp_name, len(exp_dicts), no_results_counter))
+                    % (exp_name, len(exp_dicts), no_results_counter))
 
     return pd.DataFrame(data=exp_dicts)
 
@@ -133,8 +139,7 @@ def generate_launch_commands(module, exp_config, check_flags=True):
         allowed_flags = set(module.FLAGS.flag_values_dict().keys())
         for key, value in exp_config.items():
             assert hasattr(value, '__iter__')
-            assert key in allowed_flags, "%s is not a flag in %s"%(key, str(module))
-
+            assert key in allowed_flags, "%s is not a flag in %s" % (key, str(module))
 
     config_product = list(itertools.product(*list(exp_config.values())))
     config_product_dicts = [(dict(zip(exp_config.keys(), conf))) for conf in config_product]
@@ -144,7 +149,7 @@ def generate_launch_commands(module, exp_config, check_flags=True):
     for config_dict in config_product_dicts:
         cmd = base_cmd
         for (key, value) in config_dict.items():
-            cmd += " --%s=%s"%(str(key), str(value))
+            cmd += " --%s=%s" % (str(key), str(value))
         cmds.append(cmd)
 
     return cmds
@@ -175,7 +180,7 @@ class AsyncExecutor:
                     self._pool[i].terminate()
                     if len(tasks) > 0:
                         if verbose:
-                          print(n_tasks-len(tasks))
+                            print(n_tasks - len(tasks))
                         next_task = tasks.pop(0)
                         self._pool[i] = _start_process(target, next_task)
                     else:
@@ -192,6 +197,7 @@ def _start_process(target, args=None):
         p = multiprocessing.Process(target=target)
     p.start()
     return p
+
 
 def _dummy_fun():
     pass

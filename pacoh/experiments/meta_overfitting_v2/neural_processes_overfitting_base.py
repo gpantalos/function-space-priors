@@ -5,14 +5,12 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from absl import flags
 from absl import app
 import numpy as np
 from pprint import pprint
-from meta_learn.util import get_logger
 from experiments.util import *
 from experiments.data_sim import SinusoidNonstationaryDataset, MNISTRegressionDataset, \
-    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset, provide_data
+    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset
 from meta_learn.NPR_meta import NPRegressionMetaLearned
 
 import torch
@@ -28,7 +26,6 @@ flags.DEFINE_integer('n_threads', default=4, help='number of threads')
 flags.DEFINE_integer('r_dim', default=50, help='dimensionality of the context representation')
 flags.DEFINE_integer('z_dim', default=50, help='dimensionality of the latent variable')
 flags.DEFINE_integer('h_dim', default=60, help='layer width of encoder and decoder')
-
 
 flags.DEFINE_float('lr', default=1e-3, help='learning rate for AdamW optimizer')
 flags.DEFINE_float('lr_decay', default=1.0, help='multiplicative learning rate decay parameter')
@@ -74,7 +71,7 @@ def main(argv):
         meta_train_data = dataset.generate_meta_test_data(n_tasks=1024, n_samples_context=FLAGS.n_context_samples,
                                                           n_samples_test=FLAGS.n_test_samples)
         meta_test_data = dataset.generate_meta_test_data(n_tasks=FLAGS.n_test_tasks, n_samples_context=FLAGS.n_context_samples,
-                                                    n_samples_test=FLAGS.n_test_samples)
+                                                         n_samples_test=FLAGS.n_test_samples)
 
     torch.set_num_threads(FLAGS.n_threads)
 
@@ -85,17 +82,17 @@ def main(argv):
     assert len(data_train) == FLAGS.n_train_tasks
 
     npr = NPRegressionMetaLearned(data_train,
-                                      num_iter_fit=FLAGS.n_iter_fit,
-                                      r_dim=FLAGS.r_dim,
-                                      z_dim=FLAGS.z_dim,
-                                      h_dim=FLAGS.h_dim,
-                                      weight_decay=FLAGS.weight_decay,
-                                      task_batch_size=FLAGS.batch_size,
-                                      lr_params=FLAGS.lr,
-                                      random_seed=FLAGS.seed,
-                                      optimizer=FLAGS.optimizer,
-                                      normalize_data=FLAGS.normalize_data
-                                      )
+                                  num_iter_fit=FLAGS.n_iter_fit,
+                                  r_dim=FLAGS.r_dim,
+                                  z_dim=FLAGS.z_dim,
+                                  h_dim=FLAGS.h_dim,
+                                  weight_decay=FLAGS.weight_decay,
+                                  task_batch_size=FLAGS.batch_size,
+                                  lr_params=FLAGS.lr,
+                                  random_seed=FLAGS.seed,
+                                  optimizer=FLAGS.optimizer,
+                                  normalize_data=FLAGS.normalize_data
+                                  )
 
     npr.meta_fit(log_period=1000)
 
@@ -115,6 +112,7 @@ def main(argv):
     pprint(results_dict)
 
     save_results(results_dict, exp_dir, log=True)
+
 
 if __name__ == '__main__':
     app.run(main)

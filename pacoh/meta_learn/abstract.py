@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from config import device
+
 from meta_learn.util import get_logger, _handle_input_dimensionality
 
 
@@ -36,7 +36,7 @@ class RegressionModel:
         """
         # convert to tensors
         test_x, test_t = _handle_input_dimensionality(test_x, test_t)
-        test_t_tensor = torch.from_numpy(test_t).contiguous().float().flatten().to(device)
+        test_t_tensor = torch.from_numpy(test_t).contiguous().float().flatten()
 
         with torch.no_grad():
             pred_dist = self.predict(test_x, return_density=True, *kwargs)
@@ -107,8 +107,8 @@ class RegressionModel:
         train_x_normalized, train_t_normalized = self._normalize_data(train_x, train_t)
 
         # c) Convert the data into pytorch tensors
-        self.train_x = torch.from_numpy(train_x_normalized).contiguous().float().to(device)
-        self.train_t = torch.from_numpy(train_t_normalized).contiguous().float().to(device)
+        self.train_x = torch.from_numpy(train_x_normalized).contiguous().float()
+        self.train_t = torch.from_numpy(train_t_normalized).contiguous().float()
 
         return self.train_x, self.train_t
 
@@ -151,9 +151,9 @@ class RegressionModelMetaLearned:
         context_x, context_y = _handle_input_dimensionality(context_x, context_y)
         test_x, test_y = _handle_input_dimensionality(test_x, test_y)
         if flatten_y:
-            test_y_tensor = torch.from_numpy(test_y).float().flatten().to(device)
+            test_y_tensor = torch.from_numpy(test_y).float().flatten()
         else:
-            test_y_tensor = torch.unsqueeze(torch.from_numpy(test_y).float().to(device), dim=0)
+            test_y_tensor = torch.unsqueeze(torch.from_numpy(test_y).float(), dim=0)
 
         pred_dist = self.predict(context_x, context_y, test_x, return_density=True, **kwargs)
         avg_log_likelihood = torch.mean(pred_dist.log_prob(test_y_tensor) / test_y_tensor.shape[0])
@@ -257,8 +257,8 @@ class RegressionModelMetaLearned:
             y_data = y_data.flatten()
 
         # c) convert to tensors
-        x_tensor = torch.from_numpy(x_data).float().to(device)
-        y_tensor = torch.from_numpy(y_data).float().to(device)
+        x_tensor = torch.from_numpy(x_data).float()
+        y_tensor = torch.from_numpy(y_data).float()
 
         return x_tensor, y_tensor
 

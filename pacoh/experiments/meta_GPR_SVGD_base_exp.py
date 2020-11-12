@@ -5,18 +5,14 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-
-from absl import flags
 from absl import app
 import numpy as np
-from meta_learn.util import get_logger
 from experiments.util import *
 from experiments.data_sim import SinusoidNonstationaryDataset, MNISTRegressionDataset, PhysionetDataset, \
     GPFunctionsDataset, SinusoidDataset, CauchyDataset
 from meta_learn.GPR_meta_svgd import GPRegressionMetaLearnedSVGD
 
 import torch
-
 
 flags.DEFINE_string('exp_name', default='meta-GPR-VI-base-exp', help='name of the folder in which to dump logs and results')
 
@@ -52,7 +48,6 @@ flags.DEFINE_integer('n_test_tasks', default=100, help='number of test tasks')
 flags.DEFINE_integer('n_context_samples', default=20, help='number of test context points per task')
 flags.DEFINE_integer('n_test_samples', default=500, help='number of test evaluation points per task')
 
-
 FLAGS = flags.FLAGS
 
 
@@ -85,23 +80,23 @@ def main(argv):
     torch.set_num_threads(FLAGS.n_threads)
 
     gp_meta = GPRegressionMetaLearnedSVGD(data_train,
-                                        weight_prior_std=FLAGS.weight_prior_std,
-                                        prior_factor=FLAGS.prior_factor,
-                                        covar_module=FLAGS.covar_module,
-                                        mean_module=FLAGS.mean_module,
-                                        kernel_nn_layers=nn_layers,
-                                        mean_nn_layers=nn_layers,
-                                        random_seed=FLAGS.seed,
-                                        optimizer=FLAGS.optimizer,
-                                        lr=FLAGS.lr,
-                                        lr_decay=FLAGS.lr_decay,
-                                        num_iter_fit=FLAGS.n_iter_fit,
-                                        kernel=FLAGS.kernel,
-                                        bandwidth=FLAGS.bandwidth,
-                                        num_particles=FLAGS.num_particles,
-                                        normalize_data=FLAGS.normalize_data,
-                                        task_batch_size=FLAGS.task_batch_size
-                                      )
+                                          weight_prior_std=FLAGS.weight_prior_std,
+                                          prior_factor=FLAGS.prior_factor,
+                                          covar_module=FLAGS.covar_module,
+                                          mean_module=FLAGS.mean_module,
+                                          kernel_nn_layers=nn_layers,
+                                          mean_nn_layers=nn_layers,
+                                          random_seed=FLAGS.seed,
+                                          optimizer=FLAGS.optimizer,
+                                          lr=FLAGS.lr,
+                                          lr_decay=FLAGS.lr_decay,
+                                          num_iter_fit=FLAGS.n_iter_fit,
+                                          kernel=FLAGS.kernel,
+                                          bandwidth=FLAGS.bandwidth,
+                                          num_particles=FLAGS.num_particles,
+                                          normalize_data=FLAGS.normalize_data,
+                                          task_batch_size=FLAGS.task_batch_size
+                                          )
 
     gp_meta.meta_fit(valid_tuples=data_test[:100], log_period=1000)
 
@@ -116,5 +111,6 @@ def main(argv):
     print(results_dict)
     save_results(results_dict, exp_dir, log=True)
 
+
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

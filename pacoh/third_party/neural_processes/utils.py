@@ -191,7 +191,7 @@ def xy_to_img(x, y, img_size):
     return img
 
 
-def inpaint(model, img, context_mask, device):
+def inpaint(model, img, context_mask):
     """
     Given an image and a set of context points, the model samples pixel
     intensities for the remaining pixels in the image.
@@ -208,16 +208,15 @@ def inpaint(model, img, context_mask, device):
         occluded pixel. Shape (height, width). Must have dtype=torch.uint8
         or similar. 
 
-    device : torch.device
     """
     is_training = model.neural_process.training
     # For inpainting, use Neural Process in prediction mode
     model.neural_process.training = False
     target_mask = 1 - context_mask  # All pixels which are not in context
     # Add a batch dimension to tensors and move to GPU
-    img_batch = img.unsqueeze(0).to(device)
-    context_batch = context_mask.unsqueeze(0).to(device)
-    target_batch = target_mask.unsqueeze(0).to(device)
+    img_batch = img.unsqueeze(0)
+    context_batch = context_mask.unsqueeze(0)
+    target_batch = target_mask.unsqueeze(0)
     p_y_pred = model(img_batch, context_batch, target_batch)
     # Transform Neural Process output back to image
     x_target, _ = img_mask_to_np_input(img_batch, target_batch)

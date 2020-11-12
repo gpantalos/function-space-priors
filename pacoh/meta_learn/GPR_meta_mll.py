@@ -4,7 +4,6 @@ import gpytorch
 import numpy as np
 import torch
 
-from config import device
 from meta_learn.abstract import RegressionModelMetaLearned
 from meta_learn.models import LearnedGPRegressionModel, NeuralNetwork, AffineTransformedDistribution
 from meta_learn.util import _handle_input_dimensionality, DummyLRScheduler
@@ -53,7 +52,7 @@ class GPRegressionMetaLearned(RegressionModelMetaLearned):
         # Setup components that are shared across tasks
         self._setup_gp_prior(mean_module, covar_module, learning_mode, feature_dim, mean_nn_layers, kernel_nn_layers)
         self.likelihood = gpytorch.likelihoods.GaussianLikelihood(
-            noise_constraint=gpytorch.likelihoods.noise_models.GreaterThan(1e-3)).to(device)
+            noise_constraint=gpytorch.likelihoods.noise_models.GreaterThan(1e-3))
         self.shared_parameters.append({'params': self.likelihood.parameters(), 'lr': self.lr_params})
 
         # Setup components that are different across tasks
@@ -71,9 +70,7 @@ class GPRegressionMetaLearned(RegressionModelMetaLearned):
                                                           learned_kernel=self.nn_kernel_map,
                                                           learned_mean=self.nn_mean_fn,
                                                           covar_module=self.covar_module, mean_module=self.mean_module)
-            task_dict['mll_fn'] = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, task_dict['model']).to(
-                device)
-
+            task_dict['mll_fn'] = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, task_dict['model'])
             self.task_dicts.append(task_dict)
 
         # c) prepare inference
@@ -175,7 +172,7 @@ class GPRegressionMetaLearned(RegressionModelMetaLearned):
         context_x, context_y = self._prepare_data_per_task(context_x, context_y)
 
         test_x = self._normalize_data(X=test_x, Y=None)
-        test_x = torch.from_numpy(test_x).float().to(device)
+        test_x = torch.from_numpy(test_x).float()
 
         with torch.no_grad():
             # compute posterior given the context data
@@ -218,26 +215,24 @@ class GPRegressionMetaLearned(RegressionModelMetaLearned):
         if covar_module == 'NN':
             assert learning_mode in ['learn_kernel', 'both'], 'neural network parameters must be learned'
             self.nn_kernel_map = NeuralNetwork(input_dim=self.input_dim, output_dim=feature_dim,
-                                               layer_sizes=kernel_nn_layers).to(device)
+                                               layer_sizes=kernel_nn_layers)
             self.shared_parameters.append(
                 {'params': self.nn_kernel_map.parameters(), 'lr': self.lr_params, 'weight_decay': self.weight_decay})
-            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=feature_dim)).to(
-                device)
+            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=feature_dim))
         else:
             self.nn_kernel_map = None
 
         if covar_module == 'SE':
             self.covar_module = gpytorch.kernels.ScaleKernel(
-                gpytorch.kernels.RBFKernel(ard_num_dims=self.input_dim)).to(device)
+                gpytorch.kernels.RBFKernel(ard_num_dims=self.input_dim))
         elif isinstance(covar_module, gpytorch.kernels.Kernel):
-            self.covar_module = covar_module.to(device)
+            self.covar_module = covar_module
 
         # b) determine mean map & module
 
         if mean_module == 'NN':
             assert learning_mode in ['learn_mean', 'both'], 'neural network parameters must be learned'
-            self.nn_mean_fn = NeuralNetwork(input_dim=self.input_dim, output_dim=1, layer_sizes=mean_nn_layers).to(
-                device)
+            self.nn_mean_fn = NeuralNetwork(input_dim=self.input_dim, output_dim=1, layer_sizes=mean_nn_layers)
             self.shared_parameters.append(
                 {'params': self.nn_mean_fn.parameters(), 'lr': self.lr_params, 'weight_decay': self.weight_decay})
             self.mean_module = None
@@ -245,11 +240,11 @@ class GPRegressionMetaLearned(RegressionModelMetaLearned):
             self.nn_mean_fn = None
 
         if mean_module == 'constant':
-            self.mean_module = gpytorch.means.ConstantMean().to(device)
+            self.mean_module = gpytorch.means.ConstantMean()
         elif mean_module == 'zero':
-            self.mean_module = gpytorch.means.ZeroMean().to(device)
+            self.mean_module = gpytorch.means.ZeroMean()
         elif isinstance(mean_module, gpytorch.means.Mean):
-            self.mean_module = mean_module.to(device)
+            self.mean_module = mean_module
 
         # c) add parameters of covar and mean module if desired
 

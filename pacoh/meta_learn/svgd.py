@@ -1,32 +1,32 @@
+import math
+
 import numpy as np
 import torch
-import math
 
 
 class SVGD:
-  def __init__(self, distribution, kernel, optimizer):
-    self.P = distribution
-    self.K = kernel
-    self.optim = optimizer
+    def __init__(self, distribution, kernel, optimizer):
+        self.P = distribution
+        self.K = kernel
+        self.optim = optimizer
 
-  def phi(self, X, *data):
-    X = X.detach().requires_grad_(True)
+    def phi(self, X, *data):
+        X = X.detach().requires_grad_(True)
 
-    log_prob = self.P.log_prob(X, *data)
-    score_func = torch.autograd.grad(log_prob.sum(), X)[0]
+        log_prob = self.P.log_prob(X, *data)
+        score_func = torch.autograd.grad(log_prob.sum(), X)[0]
 
-    K_XX = self.K(X, X.detach())
-    grad_K = - torch.autograd.grad(K_XX.sum(), X)[0]
+        K_XX = self.K(X, X.detach())
+        grad_K = - torch.autograd.grad(K_XX.sum(), X)[0]
 
-    phi = (K_XX.detach().matmul(score_func) + grad_K) / X.size(0)
+        phi = (K_XX.detach().matmul(score_func) + grad_K) / X.size(0)
 
-    return phi
+        return phi
 
-  def step(self, particles, *data):
-    self.optim.zero_grad()
-    particles.grad = -self.phi(particles, *data)
-    self.optim.step()
-
+    def step(self, particles, *data):
+        self.optim.zero_grad()
+        particles.grad = -self.phi(particles, *data)
+        self.optim.step()
 
 
 class RBF_Kernel(torch.nn.Module):
@@ -57,7 +57,6 @@ class RBF_Kernel(torch.nn.Module):
         K_XY = (-gamma * dnorm2).exp()
 
         return K_XY
-
 
 
 class IMQSteinKernel(torch.nn.Module):
@@ -91,14 +90,16 @@ class IMQSteinKernel(torch.nn.Module):
             return self.bandwidth
 
     def forward(self, X, Y):
-        norm_sq = (X.unsqueeze(0) - Y.unsqueeze(1))**2  # N N D
+        norm_sq = (X.unsqueeze(0) - Y.unsqueeze(1)) ** 2  # N N D
         assert norm_sq.dim() == 3
         bandwidth = self._bandwidth(norm_sq)  # D
         base_term = self.alpha + torch.sum(norm_sq / bandwidth, dim=-1)
         log_kernel = self.beta * torch.log(base_term)  # N N D
         return log_kernel.exp()
 
+
 """ Helpers """
+
 
 def norm_sq(X, Y):
     XX = X.matmul(X.t())

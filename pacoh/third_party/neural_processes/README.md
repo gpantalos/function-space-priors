@@ -31,7 +31,7 @@ neuralprocess = NeuralProcessImg(img_size=(3, 32, 32), r_dim=128, z_dim=128,
 
 # Define optimizer and trainer
 optimizer = torch.optim.Adam(neuralprocess.parameters(), lr=3e-4)
-np_trainer = NeuralProcessTrainer(device, neuralprocess, optimizer,
+np_trainer = NeuralProcessTrainer(neuralprocess, optimizer,
                                   num_context_range=(3, 20),
                                   num_extra_target_range=(5, 10))
 

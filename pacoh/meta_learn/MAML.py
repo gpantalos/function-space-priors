@@ -1,14 +1,13 @@
-import time
-import torch.nn as nn
 import math
-import torch
-import numpy as np
+import time
 
-from meta_learn.models import NeuralNetwork
+import torch.nn as nn
+
+
 from meta_learn.abstract import RegressionModelMetaLearned
+from meta_learn.models import NeuralNetwork
 from meta_learn.util import DummyLRScheduler, _handle_input_dimensionality
 
-from config import device
 
 class MAMLRegression(RegressionModelMetaLearned):
 
@@ -39,7 +38,7 @@ class MAMLRegression(RegressionModelMetaLearned):
         self._compute_normalization_stats(meta_train_data)
 
         self.meta_train_data = [self._prepare_data_per_task(train_x, train_y, flatten_y=False)
-                                                                for train_x, train_y in meta_train_data]
+                                for train_x, train_y in meta_train_data]
 
         self.nn = NeuralNetwork(self.input_dim, self.output_dim, layer_sizes=layer_sizes)
         self.initial_params = list(self.nn.parameters())
@@ -102,7 +101,6 @@ class MAMLRegression(RegressionModelMetaLearned):
                 if verbose:
                     self.logger.info(message)
 
-
         self.fitted = True
 
         return loss.item()
@@ -130,7 +128,7 @@ class MAMLRegression(RegressionModelMetaLearned):
         context_x, context_y = self._prepare_data_per_task(context_x, context_y, flatten_y=False)
 
         test_x = self._normalize_data(X=test_x, Y=None)
-        test_x = torch.from_numpy(test_x).float().to(device)
+        test_x = torch.from_numpy(test_x).float()
 
         # perform adaptation steps on context data
         adapted_params = self._eval_steps(context_x, context_y, num_steps_eval=num_steps_eval)
@@ -160,7 +158,7 @@ class MAMLRegression(RegressionModelMetaLearned):
 
         """
         test_x, test_y = _handle_input_dimensionality(test_x, test_y)
-        test_y_tensor = torch.from_numpy(test_y).float().to(device)
+        test_y_tensor = torch.from_numpy(test_y).float()
 
         y_pred = self.predict(context_x, context_y, test_x, return_tensor=True, num_steps_eval=num_steps_eval)
 
@@ -200,8 +198,8 @@ class MAMLRegression(RegressionModelMetaLearned):
     def _inner_steps(self, x_data, y_data):
         # split data into two parts
         idx_split = math.ceil(x_data.shape[0] / 2.0)
-        x_1, y_1 = x_data[:idx_split], y_data[:idx_split] # data for inner update
-        x_2, y_2 = x_data[idx_split:], y_data[idx_split:] # data for computing meta loss
+        x_1, y_1 = x_data[:idx_split], y_data[:idx_split]  # data for inner update
+        x_2, y_2 = x_data[idx_split:], y_data[idx_split:]  # data for computing meta loss
 
         # clone initial parameters
         temp_params = [param.clone() for param in self.initial_params]
@@ -259,6 +257,7 @@ if __name__ == "__main__":
     import numpy as np
 
     import os
+
     print(os.getenv("PYCHARM_DISPLAY_PORT"))
 
     torch.set_num_threads(2)
@@ -270,30 +269,28 @@ if __name__ == "__main__":
     meta_learner = MAMLRegression(meta_train_data, task_batch_size=10, num_iter_fit=10000)
     meta_learner.meta_fit(meta_test_data[:200], log_period=1000)
 
-
     for i in range(4):
         x_context, y_context, x_test, y_test = meta_test_data[i]
         idx = np.argsort(x_test, axis=0).flatten()
-        x_test,  y_test = x_test[idx], y_test[idx]
+        x_test, y_test = x_test[idx], y_test[idx]
 
         rmse = meta_learner.eval(x_context, y_context, x_test, y_test)
 
         y_pred_post, y_pred_pre = meta_learner.predict(x_context, y_context, x_test)
 
         from matplotlib import pyplot as plt
+
         plt.scatter(x_context, y_context)
         plt.scatter(x_test, y_test, color='grey')
         plt.plot(x_test, y_pred_pre, color='red')
         plt.plot(x_test, y_pred_post, 'green')
-        plt.title('num iter: %i'%10000)
+        plt.title('num iter: %i' % 10000)
         plt.show()
-
-
 
     # nn = NeuralNetwork(1, 1, layer_sizes=(32, 32))
     #
-    # x_train = torch.Tensor(train_data[0][0]).float().to(device)
-    # y_train = torch.Tensor(train_data[0][1]).float().to(device)
+    # x_train = torch.Tensor(train_data[0][0]).float()
+    # y_train = torch.Tensor(train_data[0][1]).float()
     #
     # params = list(nn.parameters())
     #
@@ -311,7 +308,7 @@ if __name__ == "__main__":
     # x_plot = np.linspace(-4, 4, 200).reshape(-1, 1)
     #
     # with torch.no_grad():
-    #     x = torch.Tensor(x_plot).float().to(device)
+    #     x = torch.Tensor(x_plot).float()
     #     y_pred = nn(x).numpy()
     #
     # from matplotlib import pyplot as plt

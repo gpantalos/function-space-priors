@@ -1,15 +1,16 @@
-import torch
-import gpytorch
 import time
 
+import gpytorch
 import numpy as np
+import torch
 
+
+from meta_learn.abstract import RegressionModelMetaLearned
 from meta_learn.models import AffineTransformedDistribution, EqualWeightedMixtureDist
 from meta_learn.random_gp import RandomGPMeta
-from meta_learn.util import _handle_input_dimensionality, DummyLRScheduler
 from meta_learn.svgd import SVGD, RBF_Kernel, IMQSteinKernel
-from meta_learn.abstract import RegressionModelMetaLearned
-from config import device
+from meta_learn.util import _handle_input_dimensionality, DummyLRScheduler
+
 
 class GPRegressionMetaLearnedSVGD(RegressionModelMetaLearned):
 
@@ -78,7 +79,6 @@ class GPRegressionMetaLearnedSVGD(RegressionModelMetaLearned):
 
         self.fitted = False
 
-
     def meta_fit(self, valid_tuples=None, verbose=True, log_period=500, n_iter=None):
         """
         fits the hyper-posterior particles with SVGD
@@ -143,7 +143,7 @@ class GPRegressionMetaLearnedSVGD(RegressionModelMetaLearned):
         context_x, context_y = self._prepare_data_per_task(context_x, context_y)
 
         test_x = self._normalize_data(X=test_x, Y=None)
-        test_x = torch.from_numpy(test_x).float().to(device)
+        test_x = torch.from_numpy(test_x).float()
 
         with torch.no_grad():
             pred_dist = self.get_pred_dist(context_x, context_y, test_x)
@@ -165,9 +165,9 @@ class GPRegressionMetaLearnedSVGD(RegressionModelMetaLearned):
 
         """ random gp model """
         self.random_gp = RandomGPMeta(size_in=self.input_dim, prior_factor=self.prior_factor,
-                                  weight_prior_std=self.weight_prior_std, bias_prior_std=self.bias_prior_std,
-                                  covar_module_str=covar_module_str, mean_module_str=mean_module_str,
-                                  mean_nn_layers=mean_nn_layers, kernel_nn_layers=kernel_nn_layers)
+                                      weight_prior_std=self.weight_prior_std, bias_prior_std=self.bias_prior_std,
+                                      covar_module_str=covar_module_str, mean_module_str=mean_module_str,
+                                      mean_nn_layers=mean_nn_layers, kernel_nn_layers=kernel_nn_layers)
 
         """ Setup SVGD inference"""
 
@@ -234,6 +234,7 @@ class GPRegressionMetaLearnedSVGD(RegressionModelMetaLearned):
         normal_batched = torch.distributions.Normal(multiv_normal_batched.mean, multiv_normal_batched.stddev)
         return EqualWeightedMixtureDist(normal_batched, batched=True, num_dists=multiv_normal_batched.batch_shape[0])
 
+
 if __name__ == "__main__":
     """ 1) Generate some training data from GP prior """
     from experiments.data_sim import GPFunctionsDataset
@@ -257,8 +258,8 @@ if __name__ == "__main__":
 
     for prior_factor in [1e-3]:
         gp_model = GPRegressionMetaLearnedSVGD(meta_train_data, num_iter_fit=2000, prior_factor=prior_factor, num_particles=10,
-                                             covar_module='SE', mean_module='NN', mean_nn_layers=NN_LAYERS, kernel_nn_layers=NN_LAYERS,
-                                             bandwidth=0.5, task_batch_size=2)
+                                               covar_module='SE', mean_module='NN', mean_nn_layers=NN_LAYERS, kernel_nn_layers=NN_LAYERS,
+                                               bandwidth=0.5, task_batch_size=2)
 
         for i in range(10):
             itrs = 0
@@ -273,5 +274,5 @@ if __name__ == "__main__":
             plt.scatter(x_context, t_context)
             plt.plot(x_test, pred_mean)
             plt.fill_between(x_test, lcb, ucb, alpha=0.2)
-            plt.title('GPR meta SVGD (prior-factor =  %.4f) itrs = %i'%(prior_factor, itrs))
+            plt.title('GPR meta SVGD (prior-factor =  %.4f) itrs = %i' % (prior_factor, itrs))
             plt.show()

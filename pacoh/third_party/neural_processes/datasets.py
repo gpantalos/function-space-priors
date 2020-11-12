@@ -1,7 +1,8 @@
 import glob
+from math import pi
+
 import numpy as np
 import torch
-from math import pi
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
@@ -28,6 +29,7 @@ class SineData(Dataset):
     num_points : int
         Number of points at which to evaluate f(x) for x in [-pi, pi].
     """
+
     def __init__(self, amplitude_range=(-1., 1.), shift_range=(-.5, .5),
                  num_samples=1000, num_points=100):
         self.amplitude_range = amplitude_range
@@ -120,6 +122,7 @@ def celeba(batch_size=16, size=32, crop=89, path_to_data='../celeba_data',
 
 class CelebADataset(Dataset):
     """CelebA dataset."""
+
     def __init__(self, path_to_data, subsample=1, transform=None):
         """
         Parameters

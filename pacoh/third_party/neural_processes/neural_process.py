@@ -1,7 +1,8 @@
 import torch
-from third_party.neural_processes.models import Encoder, MuSigmaEncoder, Decoder
 from torch import nn
 from torch.distributions import Normal
+
+from third_party.neural_processes.models import Encoder, MuSigmaEncoder, Decoder
 from third_party.neural_processes.utils import img_mask_to_np_input
 
 
@@ -26,6 +27,7 @@ class NeuralProcess(nn.Module):
     h_dim : int
         Dimension of hidden layer in encoder and decoder.
     """
+
     def __init__(self, x_dim, y_dim, r_dim, z_dim, h_dim):
         super(NeuralProcess, self).__init__()
         self.x_dim = x_dim
@@ -153,6 +155,7 @@ class NeuralProcessImg(nn.Module):
     h_dim : int
         Dimension of hidden layer in encoder and decoder.
     """
+
     def __init__(self, img_size, r_dim, z_dim, h_dim):
         super(NeuralProcessImg, self).__init__()
         self.img_size = img_size

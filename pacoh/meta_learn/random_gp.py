@@ -1,14 +1,15 @@
 import copy
+import math
+from collections import OrderedDict
+
 import gpytorch
 import torch
-import math
 import torch.nn.functional as F
-from pyro.distributions import Normal, LogNormal, Independent
-from collections import OrderedDict
+
+from pyro.distributions import Normal, Independent
 
 from meta_learn.models import LearnedGPRegressionModel, ConstantMeanLight, SEKernelLight, GaussianLikelihoodLight, \
     VectorizedModel, CatDist, NeuralNetworkVectorized
-from config import device
 
 
 def _filter(dict, str):
@@ -25,23 +26,21 @@ class VectorizedGP(VectorizedModel):
                  mean_nn_layers=(32, 32), kernel_nn_layers=(32, 32), nonlinearlity=torch.tanh):
         super().__init__(input_dim, 1)
 
-
         self._params = OrderedDict()
         self.mean_module_str = mean_module_str
         self.covar_module_str = covar_module_str
 
         if mean_module_str == 'NN':
             self.mean_nn = self._param_module('mean_nn', NeuralNetworkVectorized(input_dim, 1,
-                                                         layer_sizes=mean_nn_layers, nonlinearlity=nonlinearlity))
+                                                                                 layer_sizes=mean_nn_layers, nonlinearlity=nonlinearlity))
         elif mean_module_str == 'constant':
             self.constant_mean = self._param('constant_mean', torch.zeros(1, 1))
         else:
             raise NotImplementedError
 
-
         if covar_module_str == "NN":
             self.kernel_nn = self._param_module('kernel_nn', NeuralNetworkVectorized(input_dim, feature_dim,
-                                                        layer_sizes=kernel_nn_layers, nonlinearlity=nonlinearlity))
+                                                                                     layer_sizes=kernel_nn_layers, nonlinearlity=nonlinearlity))
             self.lengthscale_raw = self._param('lengthscale_raw', torch.zeros(1, feature_dim))
         elif covar_module_str == 'SE':
             self.lengthscale_raw = self._param('lengthscale_raw', torch.zeros(1, input_dim))
@@ -49,7 +48,6 @@ class VectorizedGP(VectorizedModel):
             raise NotImplementedError
 
         self.noise_raw = self._param('noise_raw', torch.zeros(1, 1))
-
 
     def forward(self, x_data, y_data, train=True, prior=False):
         assert x_data.ndim == 3
@@ -83,7 +81,7 @@ class VectorizedGP(VectorizedModel):
                 mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, gp)
                 output = gp(x_data)
                 return likelihood(output), mll(output, y_data)
-            else: # --> eval
+            else:  # --> eval
                 gp.eval()
                 likelihood.eval()
                 return gp, likelihood
@@ -105,13 +103,12 @@ class VectorizedGP(VectorizedModel):
         assert type(name) == str
         assert isinstance(tensor, torch.Tensor)
         assert name not in list(self._params.keys())
-        if not device.type == tensor.device.type:
-            tensor = tensor.to(device)
         self._params[name] = tensor
         return tensor
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
+
 
 class _RandomGPBase:
 
@@ -126,26 +123,26 @@ class _RandomGPBase:
         for name, shape in self.gp.parameter_shapes().items():
 
             if name == 'constant_mean':
-                mean_p_loc = torch.zeros(1).to(device)
-                mean_p_scale = torch.ones(1).to(device)
+                mean_p_loc = torch.zeros(1)
+                mean_p_scale = torch.ones(1)
                 self._param_dist(name, Normal(mean_p_loc, mean_p_scale).to_event(1))
 
             if name == 'lengthscale_raw':
-                lengthscale_p_loc = torch.zeros(shape[-1]).to(device)
-                lengthscale_p_scale = torch.ones(shape[-1]).to(device)
+                lengthscale_p_loc = torch.zeros(shape[-1])
+                lengthscale_p_scale = torch.ones(shape[-1])
                 self._param_dist(name, Normal(lengthscale_p_loc, lengthscale_p_scale).to_event(1))
 
             if name == 'noise_raw':
-                noise_p_loc = -1. * torch.ones(1).to(device)
-                noise_p_scale = torch.ones(1).to(device)
+                noise_p_loc = -1. * torch.ones(1)
+                noise_p_scale = torch.ones(1)
                 self._param_dist(name, Normal(noise_p_loc, noise_p_scale).to_event(1))
 
             if 'mean_nn' in name or 'kernel_nn' in name:
-                mean = torch.zeros(shape).to(device)
+                mean = torch.zeros(shape)
                 if "weight" in name:
-                    std = weight_prior_std * torch.ones(shape).to(device)
+                    std = weight_prior_std * torch.ones(shape)
                 elif "bias" in name:
-                    std = bias_prior_std * torch.ones(shape).to(device)
+                    std = bias_prior_std * torch.ones(shape)
                 else:
                     raise NotImplementedError
                 self._param_dist(name, Normal(mean, std).to_event(1))
@@ -191,6 +188,7 @@ class _RandomGPBase:
             param_shapes_dict[name] = dist.event_shape
         return param_shapes_dict
 
+
 class RandomGP(_RandomGPBase):
 
     def _log_prob_likelihood(self, params, x_data, y_data):
@@ -201,13 +199,14 @@ class RandomGP(_RandomGPBase):
     def log_prob(self, params, x_data, y_data):
         return self.prior_factor * self._log_prob_prior(params) + self._log_prob_likelihood(params, x_data, y_data)
 
+
 class RandomGPMeta(_RandomGPBase):
 
     def _log_prob_likelihood(self, params, train_data_tuples):
         fn = self.get_forward_fn(params)
 
         num_datasets = len(train_data_tuples)
-        dataset_sizes = torch.tensor([train_x.shape[-2] for train_x, _ in train_data_tuples]).float().to(device)
+        dataset_sizes = torch.tensor([train_x.shape[-2] for train_x, _ in train_data_tuples]).float()
         harmonic_mean_dataset_size = 1. / (torch.mean(1. / dataset_sizes))
         pre_factor = harmonic_mean_dataset_size / (harmonic_mean_dataset_size + num_datasets)
 
@@ -220,6 +219,7 @@ class RandomGPMeta(_RandomGPBase):
 
     def log_prob(self, params, train_data_tuples):
         return self.prior_factor * self._log_prob_prior(params) + self._log_prob_likelihood(params, train_data_tuples)
+
 
 class RandomGPPosterior(torch.nn.Module):
     """
@@ -241,13 +241,13 @@ class RandomGPPosterior(torch.nn.Module):
             idx_start = idx_end
 
         param_shape = torch.Size((idx_start,))
-        self.loc = torch.nn.Parameter(torch.normal(0.0, init_std, size=param_shape, device=device))
+        self.loc = torch.nn.Parameter(torch.normal(0.0, init_std, size=param_shape))
 
         if cov_type == 'diag':
-            self.scale = torch.nn.Parameter(torch.normal(math.log(0.1), init_std, size=param_shape, device=device))
+            self.scale = torch.nn.Parameter(torch.normal(math.log(0.1), init_std, size=param_shape))
             self.dist_fn = lambda: Normal(self.loc, self.scale.exp()).to_event(1)
         if cov_type == 'full':
-            self.tril_cov = torch.nn.Parameter(torch.diag(torch.ones(param_shape, device=device).uniform_(0.05, 0.1)))
+            self.tril_cov = torch.nn.Parameter(torch.diag(torch.ones(param_shape).uniform_(0.05, 0.1)))
             self.dist_fn = lambda: torch.distributions.MultivariateNormal(loc=self.loc, scale_tril=torch.tril(self.tril_cov))
 
     def forward(self):

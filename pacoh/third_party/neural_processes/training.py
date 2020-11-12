@@ -1,20 +1,19 @@
-import torch
 from random import randint
-from third_party.neural_processes.neural_process import NeuralProcessImg
-from torch import nn
+
+import torch
 from torch.distributions.kl import kl_divergence
+
+from third_party.neural_processes.neural_process import NeuralProcessImg
 from third_party.neural_processes.utils import (context_target_split, batch_context_target_mask,
-                   img_mask_to_np_input)
+                                                img_mask_to_np_input)
 
 
-class NeuralProcessTrainer():
+class NeuralProcessTrainer:
     """
     Class to handle training of Neural Processes for functions and images.
 
     Parameters
     ----------
-    device : torch.device
-
     neural_process : neural_process.NeuralProcess or NeuralProcessImg instance
 
     optimizer : one of torch.optim optimizers
@@ -31,9 +30,9 @@ class NeuralProcessTrainer():
     print_freq : int
         Frequency with which to print loss information during training.
     """
-    def __init__(self, device, neural_process, optimizer, num_context_range,
+
+    def __init__(self, neural_process, optimizer, num_context_range,
                  num_extra_target_range, print_freq=100):
-        self.device = device
         self.neural_process = neural_process
         self.optimizer = optimizer
         self.num_context_range = num_context_range
@@ -69,17 +68,9 @@ class NeuralProcessTrainer():
                 if self.is_img:
                     img, _ = data  # data is a tuple (img, label)
                     batch_size = img.size(0)
-                    context_mask, target_mask = \
-                        batch_context_target_mask(self.neural_process.img_size,
-                                                  num_context, num_extra_target,
-                                                  batch_size)
+                    context_mask, target_mask = batch_context_target_mask(self.neural_process.img_size, num_context, num_extra_target, batch_size)
 
-                    img = img.to(self.device)
-                    context_mask = context_mask.to(self.device)
-                    target_mask = target_mask.to(self.device)
-
-                    p_y_pred, q_target, q_context = \
-                        self.neural_process(img, context_mask, target_mask)
+                    p_y_pred, q_target, q_context = self.neural_process(img, context_mask, target_mask)
 
                     # Calculate y_target as this will be required for loss
                     _, y_target = img_mask_to_np_input(img, target_mask)

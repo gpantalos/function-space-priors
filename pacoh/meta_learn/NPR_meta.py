@@ -1,19 +1,15 @@
-import sys
-import torch
-import time
 import math
+import time
+
 import numpy as np
+import torch
 from torch.distributions.kl import kl_divergence
 
-sys.path.append("")
-
-from third_party.neural_processes.utils import context_target_split
-from third_party.neural_processes.neural_process import NeuralProcess
-
+from meta_learn.abstract import RegressionModelMetaLearned
 from meta_learn.models import AffineTransformedDistribution
 from meta_learn.util import _handle_input_dimensionality, DummyLRScheduler
-from meta_learn.abstract import RegressionModelMetaLearned
-from config import device
+from third_party.neural_processes.neural_process import NeuralProcess
+from third_party.neural_processes.utils import context_target_split
 
 
 class NPRegressionMetaLearned(RegressionModelMetaLearned):
@@ -48,15 +44,15 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         # Check that data all has the same size
         self._check_meta_data_shapes(meta_train_data)
         self._compute_normalization_stats(meta_train_data)
-        
+
         self.input_dim = meta_train_data[0][0].shape[-1]
         self.output_dim = meta_train_data[0][1].shape[-1]
-        
+
         self.model = NeuralProcess(x_dim=self.input_dim,
-                                  y_dim=self.output_dim,
-                                  r_dim=self.r_dim,
-                                  z_dim=self.z_dim,
-                                  h_dim=self.h_dim)
+                                   y_dim=self.output_dim,
+                                   r_dim=self.r_dim,
+                                   z_dim=self.z_dim,
+                                   h_dim=self.h_dim)
 
         # Setup components that are shared across tasks
         self.shared_parameters = self.model.parameters()
@@ -64,7 +60,7 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         # Setup components that are different across tasks
         self.task_dicts = []
 
-        for i, (train_x, train_y) in enumerate(meta_train_data): # TODO: consider parallelizing this loop
+        for i, (train_x, train_y) in enumerate(meta_train_data):  # TODO: consider parallelizing this loop
             task_dict = {}
 
             # a) prepare data
@@ -81,7 +77,6 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         self._setup_optimizer(optimizer, lr_params, lr_decay)
 
         self.fitted = False
-
 
     def meta_fit(self, valid_tuples=None, verbose=True, log_period=500, n_iter=None):
         """
@@ -107,7 +102,7 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
 
             loss = 0.0
             self.optimizer.zero_grad()
-                
+
             batch = self.rds_numpy.choice(self.task_dicts, size=self.task_batch_size)
             for task in batch:
                 batch_x = torch.unsqueeze(task["train_x"], dim=0)
@@ -117,12 +112,12 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
                     num_context = task["num_context"]
                 else:
                     num_context = self.num_context
-                    
+
                 if "num_extra_target" in task:
                     num_extra_target = task["num_extra_target"]
                 else:
                     num_extra_target = self.num_extra_target
-        
+
                 x_context, y_context, x_target, y_target = \
                     context_target_split(batch_x, batch_y,
                                          num_context, num_extra_target)
@@ -155,13 +150,11 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
                 if verbose:
                     self.logger.info(message)
 
-
         self.fitted = True
 
         self.model.eval()
         return loss.item()
 
-    
     def predict(self, context_x, context_y, test_x, return_density=False):
         """
         computes the predictive distribution of the targets p(t|test_x, test_context_x, context_y)
@@ -178,7 +171,7 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
 
         train_old = self.model.training
         self.model.eval()
-        
+
         context_x, context_y = _handle_input_dimensionality(context_x, context_y)
         test_x = _handle_input_dimensionality(test_x)
         assert test_x.shape[1] == context_x.shape[1]
@@ -187,8 +180,8 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         context_x, context_y = self._prepare_data_per_task(context_x, context_y, flatten_y=False)
 
         test_x = self._normalize_data(X=test_x, Y=None)
-        test_x = torch.from_numpy(test_x).float().to(device)
-        
+        test_x = torch.from_numpy(test_x).float()
+
         context_x = torch.unsqueeze(context_x, 0)
         context_y = torch.unsqueeze(context_y, 0)
         test_x = torch.unsqueeze(test_x, 0)
@@ -197,11 +190,11 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
             # compute posterior given the context data
             pred_dist = self.model(context_x, context_y, test_x)
             pred_dist_transformed = AffineTransformedDistribution(pred_dist, normalization_mean=self.y_mean,
-                                                                  normalization_std=self.y_std)            
+                                                                  normalization_std=self.y_std)
 
         if train_old:
             self.model.train()
-            
+
         if return_density:
             return pred_dist_transformed
         else:
@@ -209,7 +202,6 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
             pred_std = pred_dist_transformed.stddev
             return pred_mean.cpu().numpy(), pred_std.cpu().numpy()
 
-        
     def state_dict(self):
         state_dict = {
             'optimizer': self.optimizer.state_dict(),
@@ -219,12 +211,10 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
             assert torch.all(state_dict['model'][key] == tensor).item()
         return state_dict
 
-    
     def load_state_dict(self, state_dict):
         self.model.load_state_dict(state_dict['model'])
         self.optimizer.load_state_dict(state_dict['optimizer'])
-        
-        
+
     def _loss(self, p_y_pred, y_target, q_target, q_context):
         """
         Computes Neural Process loss.
@@ -250,7 +240,6 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         # r_dim (since r_dim is dimension of normal distribution)
         kl = kl_divergence(q_target, q_context).mean(dim=0).sum()
         return -log_likelihood + kl
-    
 
     def _setup_optimizer(self, optimizer, lr, lr_decay):
         if optimizer == 'Adam':
@@ -265,13 +254,12 @@ class NPRegressionMetaLearned(RegressionModelMetaLearned):
         else:
             self.lr_scheduler = DummyLRScheduler()
 
-            
     def _vectorize_pred_dist(self, pred_dist):
         return torch.distributions.Normal(pred_dist.mean, pred_dist.stddev)
 
 
 if __name__ == "__main__":
-    from experiments.data_sim import GPFunctionsDataset, SinusoidDataset, provide_data
+    from experiments.data_sim import provide_data
 
     meta_train_data, _, meta_test_data = provide_data('physionet_0')
 

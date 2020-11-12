@@ -5,14 +5,12 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from absl import flags
 from absl import app
 import numpy as np
 from pprint import pprint
-from meta_learn.util import get_logger
 from experiments.util import *
 from experiments.data_sim import SinusoidNonstationaryDataset, MNISTRegressionDataset, \
-    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset, provide_data
+    PhysionetDataset, GPFunctionsDataset, SinusoidDataset, CauchyDataset
 from meta_learn.MAML import MAMLRegression
 
 import torch
@@ -71,7 +69,7 @@ def main(argv):
         meta_train_data = dataset.generate_meta_test_data(n_tasks=1024, n_samples_context=FLAGS.n_context_samples,
                                                           n_samples_test=FLAGS.n_test_samples)
         meta_test_data = dataset.generate_meta_test_data(n_tasks=FLAGS.n_test_tasks, n_samples_context=FLAGS.n_context_samples,
-                                                    n_samples_test=FLAGS.n_test_samples)
+                                                         n_samples_test=FLAGS.n_test_samples)
 
     nn_layers = tuple([FLAGS.layer_size for _ in range(FLAGS.num_layers)])
     torch.set_num_threads(FLAGS.n_threads)
@@ -83,15 +81,15 @@ def main(argv):
     assert len(data_train) == FLAGS.n_train_tasks
 
     gp_meta = MAMLRegression(data_train,
-                              num_iter_fit=FLAGS.n_iter_fit,
-                              layer_sizes=nn_layers,
-                              task_batch_size=FLAGS.batch_size,
-                              lr_inner=FLAGS.lr_inner,
-                              lr_meta=FLAGS.lr,
-                              random_seed=FLAGS.seed,
-                              optimizer=FLAGS.optimizer,
-                              normalize_data=FLAGS.normalize_data
-                              )
+                             num_iter_fit=FLAGS.n_iter_fit,
+                             layer_sizes=nn_layers,
+                             task_batch_size=FLAGS.batch_size,
+                             lr_inner=FLAGS.lr_inner,
+                             lr_meta=FLAGS.lr,
+                             random_seed=FLAGS.seed,
+                             optimizer=FLAGS.optimizer,
+                             normalize_data=FLAGS.normalize_data
+                             )
 
     gp_meta.meta_fit(log_period=1000)
 
@@ -107,6 +105,7 @@ def main(argv):
     pprint(results_dict)
 
     save_results(results_dict, exp_dir, log=True)
+
 
 if __name__ == '__main__':
     app.run(main)

@@ -1,18 +1,18 @@
 import json
-import numpy as np
 import os
 import sys
+from time import strftime
+
 import torch
 from datasets import mnist, celeba
 from neural_process import NeuralProcessImg
-from time import strftime
 from training import NeuralProcessTrainer
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Get config file from command line arguments
 if len(sys.argv) != 2:
-    raise(RuntimeError("Wrong arguments, use python main_experiment.py <path_to_config>"))
+    raise (RuntimeError("Wrong arguments, use python main_experiment.py <path_to_config>"))
 config_path = sys.argv[1]
 
 # Create a folder to store experiment results
@@ -43,11 +43,11 @@ if config["dataset"] == "mnist":
 elif config["dataset"] == "celeba":
     data_loader = celeba(batch_size=batch_size, size=img_size[1])
 
-np_img = NeuralProcessImg(img_size, r_dim, z_dim, h_dim).to(device)
+np_img = NeuralProcessImg(img_size, r_dim, z_dim, h_dim)
 
 optimizer = torch.optim.Adam(np_img.parameters(), lr=config["lr"])
 
-np_trainer = NeuralProcessTrainer(device, np_img, optimizer,
+np_trainer = NeuralProcessTrainer(np_img, optimizer,
                                   num_context_range, num_extra_target_range,
                                   print_freq=100)
 

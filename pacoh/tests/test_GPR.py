@@ -1,10 +1,11 @@
 import unittest
-import numpy as np
 
-from meta_learn.GPR_mll import GPRegressionLearned
-from meta_learn.GPR_meta_mll import GPRegressionMetaLearned
-from gpytorch.kernels import CosineKernel
+import numpy as np
 import torch
+from gpytorch.kernels import CosineKernel
+
+from meta_learn.GPR_meta_mll import GPRegressionMetaLearned
+from meta_learn.GPR_mll import GPRegressionLearned
 
 
 class TestGPR_mll(unittest.TestCase):
@@ -21,7 +22,7 @@ class TestGPR_mll(unittest.TestCase):
 
         self.y_train_zero = self.x_train * 0 + np.random.normal(scale=0.02, size=self.x_train.shape)
         self.y_train_two = self.x_train * 0 + 2 + np.random.normal(scale=0.02, size=self.x_train.shape)
-        self.y_train_sin = np.sin(4* self.x_train)
+        self.y_train_sin = np.sin(4 * self.x_train)
 
         # test
         n_test_points = 80
@@ -34,10 +35,10 @@ class TestGPR_mll(unittest.TestCase):
 
     def test_random_seed_consistency(self):
         gpr_model_1 = GPRegressionLearned(self.x_train, self.y_train_two, learning_mode='both',
-                                        num_iter_fit=5, mean_module='NN', covar_module='NN', random_seed=22)
+                                          num_iter_fit=5, mean_module='NN', covar_module='NN', random_seed=22)
 
         gpr_model_2 = GPRegressionLearned(self.x_train, self.y_train_two, learning_mode='both',
-                                        num_iter_fit=5, mean_module='NN', covar_module='NN', random_seed=22)
+                                          num_iter_fit=5, mean_module='NN', covar_module='NN', random_seed=22)
 
         gpr_model_1.fit()
         t_predict_1 = gpr_model_1.predict(self.x_test)
@@ -53,17 +54,15 @@ class TestGPR_mll(unittest.TestCase):
         import itertools
         # check that more datasets improve performance
         for mean_module, covar_module in itertools.product(['constant', 'NN'], ['SE', 'NN']):
-
             gpr_model = GPRegressionLearned(self.x_train, self.y_train_two, learning_mode='both',
                                             num_iter_fit=10, mean_module=mean_module, covar_module='NN', random_seed=22)
             gpr_model.fit()
             pred_1 = gpr_model.predict(self.x_train)
 
             gpr_model2 = GPRegressionLearned(self.x_train, self.y_train_two, learning_mode='both',
-                                            num_iter_fit=1, mean_module=mean_module, covar_module='NN', random_seed=345)
+                                             num_iter_fit=1, mean_module=mean_module, covar_module='NN', random_seed=345)
             gpr_model2.fit()
             pred_2 = gpr_model2.predict(self.x_train)
-
 
             file = ('/tmp/test_torch_serialization.pkl')
             torch.save(gpr_model.state_dict(), file)
@@ -72,10 +71,8 @@ class TestGPR_mll(unittest.TestCase):
             assert not np.array_equal(pred_1, pred_2)
             assert np.array_equal(pred_1, pred_3)
 
-
     def test_mean_learning(self):
         for mean_module in ['NN']:
-
             gpr_model_vanilla = GPRegressionLearned(self.x_train, self.y_train_sin, learning_mode='vanilla', num_iter_fit=20,
                                                     mean_module='constant', covar_module='SE')
             gpr_model_vanilla.fit()
@@ -95,16 +92,14 @@ class TestGPR_mll(unittest.TestCase):
     def test_kernel_learning_COS(self):
 
         for learning_mode in ['learn_kernel', 'both']:
-
             gpr_model_vanilla = GPRegressionLearned(self.x_train, self.y_train_sin, learning_mode='vanilla',
                                                     num_iter_fit=1,
                                                     mean_module='constant', covar_module=CosineKernel())
             gpr_model_vanilla.fit()
 
-
             gpr_model_learn_kernel = GPRegressionLearned(self.x_train, self.y_train_sin, learning_mode='learn_kernel',
-                                                    num_iter_fit=500,
-                                                    mean_module='constant', covar_module=CosineKernel())
+                                                         num_iter_fit=500,
+                                                         mean_module='constant', covar_module=CosineKernel())
 
             print(gpr_model_learn_kernel.model.covar_module.lengthscale)
             gpr_model_learn_kernel.fit(valid_x=self.x_train, valid_t=self.y_train_sin)
@@ -122,16 +117,14 @@ class TestGPR_mll(unittest.TestCase):
     def test_kernel_learning_NN(self):
 
         for learning_mode in ['learn_kernel', 'both']:
-
             gpr_model_vanilla = GPRegressionLearned(self.x_train, self.y_train_sin, learning_mode='learn_kernel',
                                                     num_iter_fit=1,
                                                     mean_module='zero', covar_module='NN')
             gpr_model_vanilla.fit()
 
-
             gpr_model_learn_kernel = GPRegressionLearned(self.x_train, self.y_train_sin, learning_mode=learning_mode,
-                                                    num_iter_fit=500, mean_module='constant', covar_module='NN',
-                                                    kernel_nn_layers=(16, 16), mean_nn_layers=(16, 16))
+                                                         num_iter_fit=500, mean_module='constant', covar_module='NN',
+                                                         kernel_nn_layers=(16, 16), mean_nn_layers=(16, 16))
             gpr_model_learn_kernel.fit(valid_x=self.x_train, valid_t=self.y_train_sin)
 
             ll_vanilla, rmse_vanilla, _ = gpr_model_vanilla.eval(self.x_train, self.y_train_sin)
@@ -143,6 +136,7 @@ class TestGPR_mll(unittest.TestCase):
             self.assertGreater(ll_kernel, ll_vanilla)
             self.assertLess(rmse_kernel, rmse_vanilla)
 
+
 class TestGPR_mll_meta(unittest.TestCase):
 
     def setUp(self):
@@ -151,7 +145,7 @@ class TestGPR_mll_meta(unittest.TestCase):
         torch.manual_seed(22)
         np.random.seed(23)
 
-        #sample_data = lambda n_samples: sample_sinusoid_regression_data(n_samples_train, amp_low=0.9, amp_high=1.1, slope_std=0.01)
+        # sample_data = lambda n_samples: sample_sinusoid_regression_data(n_samples_train, amp_low=0.9, amp_high=1.1, slope_std=0.01)
         # meta train
         n_train_datasets = 10
         n_samples_train = 5
@@ -163,12 +157,11 @@ class TestGPR_mll_meta(unittest.TestCase):
         n_samples_test = 50
 
         test_data = [sample_data_nonstationary(n_samples_test_context + n_samples_test) for _ in
-                            range(n_test_datasets)]
+                     range(n_test_datasets)]
 
         # split data into test_context and test_valid
         self.test_data_tuples = [(x[:n_samples_test_context], t[:n_samples_test_context],
                                   x[n_samples_test_context:], t[n_samples_test_context:]) for (x, t) in test_data]
-
 
     def test_random_seed_consistency(self):
         gp_meta_1 = GPRegressionMetaLearned(self.train_data_tuples[:2], learning_mode='both', num_iter_fit=5,
@@ -192,17 +185,15 @@ class TestGPR_mll_meta(unittest.TestCase):
         import itertools
         # check that more datasets improve performance
         for mean_module, covar_module in itertools.product(['constant', 'NN'], ['SE', 'NN']):
-
             gpr_model = GPRegressionMetaLearned(self.train_data_tuples[:3], learning_mode='both',
-                                            num_iter_fit=5, mean_module=mean_module, covar_module='NN', random_seed=22)
+                                                num_iter_fit=5, mean_module=mean_module, covar_module='NN', random_seed=22)
             gpr_model.meta_fit()
             pred_1 = gpr_model.predict(*self.test_data_tuples[0][:3])
 
             gpr_model2 = GPRegressionMetaLearned(self.train_data_tuples[:3], learning_mode='both',
-                                            num_iter_fit=5, mean_module=mean_module, covar_module='NN', random_seed=25)
+                                                 num_iter_fit=5, mean_module=mean_module, covar_module='NN', random_seed=25)
             gpr_model2.meta_fit()
             pred_2 = gpr_model2.predict(*self.test_data_tuples[0][:3])
-
 
             file = ('/tmp/test_torch_serialization.pkl')
             torch.save(gpr_model.state_dict(), file)
@@ -243,10 +234,8 @@ class TestGPR_mll_meta(unittest.TestCase):
         test_ll_meta_10, test_rmse_meta_10, _ = gp_meta.eval_datasets(self.test_data_tuples)
         print('Test log-likelihood meta (10 datasets):', test_ll_meta_10)
 
-
         self.assertGreater(test_ll_meta_10, test_ll_meta_2)
         self.assertLess(test_rmse_meta_10, test_rmse_meta_2)
-
 
     def test_normal_vs_meta(self):
 
@@ -292,6 +281,7 @@ def sample_data_nonstationary(size=1):
     X = np.random.uniform(-5, 5, size=(size, 1))
     Y = func(X)
     return X, Y
+
 
 if __name__ == '__main__':
     unittest.main()

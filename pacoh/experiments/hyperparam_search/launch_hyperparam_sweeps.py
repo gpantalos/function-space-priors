@@ -15,7 +15,6 @@ import experiments.hyperparam_search.meta_mlap_hyperparam as meta_pac_hyperparam
 from absl import flags
 from absl import app
 
-
 flags.DEFINE_integer('n_cpus', default=32, help='number of cpus to use')
 flags.DEFINE_integer('n_gpus', default=1, help='number of gpus to use')
 flags.DEFINE_string('algos', default='pac', help='specifies which dataset to use')
@@ -27,11 +26,11 @@ flags.DEFINE_boolean('resume', default=False, help='whether to resume checkpoint
 
 FLAGS = flags.FLAGS
 
-
 algo_map_dict = {'map': meta_mll_hparam,
                  'vi': meta_vi_hparam,
                  'svgd': meta_svgd_hparam,
                  'pac': meta_pac_hyperparam}
+
 
 def main(argv):
     hparam_search_modules = [algo_map_dict[algo_str] for algo_str in FLAGS.algos.split(',')]
@@ -54,19 +53,18 @@ def main(argv):
 
     print(command_list)
 
-
     if FLAGS.cluster:
         cluster_cmds = []
         for python_cmd in command_list:
             bsub_cmd = 'bsub' \
-                       ' -W %i:59'%(3 if FLAGS.load_analysis else 23) + \
+                       ' -W %i:59' % (3 if FLAGS.load_analysis else 23) + \
                        ' -R "rusage[mem=6000]"' + \
-                       ' -R "rusage[ngpus_excl_p=%i]"'%FLAGS.n_gpus + \
+                       ' -R "rusage[ngpus_excl_p=%i]"' % FLAGS.n_gpus + \
                        ' -R "span[hosts=1]"' \
-                       ' -n %i '% (FLAGS.n_cpus)
+                       ' -n %i ' % (FLAGS.n_cpus)
             cluster_cmds.append(bsub_cmd + ' ' + python_cmd)
 
-        answer = input("About to submit %i compute jobs to the cluster. Proceed? [yes/no]\n"%len(cluster_cmds))
+        answer = input("About to submit %i compute jobs to the cluster. Proceed? [yes/no]\n" % len(cluster_cmds))
         if answer == 'yes':
             for cmd in cluster_cmds:
                 if FLAGS.dry:
@@ -75,13 +73,14 @@ def main(argv):
                     os.system(cmd)
 
     else:
-        answer = input("About to run %i compute jobs in a for loop. Proceed? [yes/no]\n"%len(command_list))
+        answer = input("About to run %i compute jobs in a for loop. Proceed? [yes/no]\n" % len(command_list))
         if answer == 'yes':
             for cmd in command_list:
                 if FLAGS.dry:
                     print(cmd)
                 else:
                     os.system(cmd)
+
 
 if __name__ == '__main__':
     app.run(main)

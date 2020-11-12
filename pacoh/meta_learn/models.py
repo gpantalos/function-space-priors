@@ -6,7 +6,6 @@ import torch
 from torch.distributions import Distribution
 from torch.distributions import TransformedDistribution, AffineTransform
 
-from config import device
 from meta_learn.util import find_root_by_bounding
 
 
@@ -23,8 +22,8 @@ class AffineTransformedDistribution(TransformedDistribution):
     """
 
     def __init__(self, base_dist, normalization_mean, normalization_std):
-        self.loc_tensor = torch.tensor(normalization_mean).float().reshape((1,)).to(device)
-        self.scale_tensor = torch.tensor(normalization_std).float().reshape((1,)).to(device)
+        self.loc_tensor = torch.tensor(normalization_mean).float().reshape((1,))
+        self.scale_tensor = torch.tensor(normalization_std).float().reshape((1,))
         normalization_transform = AffineTransform(loc=self.loc_tensor, scale=self.scale_tensor)
         super().__init__(base_dist, normalization_transform)
 
@@ -65,6 +64,7 @@ class UnnormalizedExpDist(Distribution):
 class FactorizedNormal(Distribution):
 
     def __init__(self, loc, scale, summation_axis=-1):
+        super().__init__()
         self.normal_dist = torch.distributions.Normal(loc, scale)
         self.summation_axis = summation_axis
 
@@ -142,8 +142,8 @@ class EqualWeightedMixtureDist(Distribution):
 
 
 class CatDist(Distribution):
-
     def __init__(self, dists, reduce_event_dim=True):
+        super().__init__()
         assert all([len(dist.event_shape) == 1 for dist in dists])
         assert all([len(dist.batch_shape) == 0 for dist in dists])
         self.reduce_event_dim = reduce_event_dim
@@ -285,8 +285,8 @@ class LinearVectorized(VectorizedModel):
     def __init__(self, input_dim, output_dim):
         super().__init__(input_dim, output_dim)
 
-        self.weight = torch.normal(0, 1, size=(input_dim * output_dim,), device=device, requires_grad=True)
-        self.bias = torch.zeros(output_dim, device=device, requires_grad=True)
+        self.weight = torch.normal(0, 1, size=(input_dim * output_dim,), requires_grad=True)
+        self.bias = torch.zeros(output_dim, requires_grad=True)
 
         self.reset_parameters()
 

@@ -1,11 +1,10 @@
-import gpytorch
 import time
-import torch
-import numpy as np
 
-from meta_learn.models import LearnedGPRegressionModel, NeuralNetwork, AffineTransformedDistribution
+import gpytorch
+
+
 from meta_learn.abstract import RegressionModel
-from config import device
+from meta_learn.models import LearnedGPRegressionModel, NeuralNetwork, AffineTransformedDistribution
 
 
 class GPRegressionLearned(RegressionModel):
@@ -55,41 +54,40 @@ class GPRegressionLearned(RegressionModel):
 
         if covar_module == 'NN':
             assert learning_mode in ['learn_kernel', 'both'], 'neural network parameters must be learned'
-            nn_kernel_map = NeuralNetwork(input_dim=self.input_dim, output_dim=feature_dim, layer_sizes=kernel_nn_layers).to(device)
+            nn_kernel_map = NeuralNetwork(input_dim=self.input_dim, output_dim=feature_dim, layer_sizes=kernel_nn_layers)
             self.parameters.append({'params': nn_kernel_map.parameters(), 'lr': self.lr, 'weight_decay': self.weight_decay})
-            covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=feature_dim)).to(device)
+            covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=feature_dim))
         else:
             nn_kernel_map = None
 
         if covar_module == 'SE':
-            covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=self.input_dim)).to(device)
+            covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=self.input_dim))
 
         # B) determine mean map & module
 
         if mean_module == 'NN':
             assert learning_mode in ['learn_mean', 'both'], 'neural network parameters must be learned'
-            nn_mean_fn = NeuralNetwork(input_dim=self.input_dim, output_dim=1, layer_sizes=mean_nn_layers).to(device)
+            nn_mean_fn = NeuralNetwork(input_dim=self.input_dim, output_dim=1, layer_sizes=mean_nn_layers)
             self.parameters.append({'params': nn_mean_fn.parameters(), 'lr': self.lr, 'weight_decay': self.weight_decay})
             mean_module = None
         else:
             nn_mean_fn = None
 
         if mean_module == 'constant':
-            mean_module = gpytorch.means.ConstantMean().to(device)
+            mean_module = gpytorch.means.ConstantMean()
         elif mean_module == 'zero':
-            mean_module = gpytorch.means.ZeroMean().to(device)
+            mean_module = gpytorch.means.ZeroMean()
 
         # C) setup GP model
 
-        self.likelihood = gpytorch.likelihoods.GaussianLikelihood().to(device)
+        self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
         self.parameters.append({'params': self.likelihood.parameters(), 'lr': self.lr})
 
         self.model = LearnedGPRegressionModel(self.train_x_tensor, self.train_t_tensor, self.likelihood,
                                               learned_kernel=nn_kernel_map, learned_mean=nn_mean_fn,
                                               covar_module=covar_module, mean_module=mean_module)
 
-        self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.model).to(device)
-
+        self.mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.model)
 
         # D) determine which parameters are trained and setup optimizer
 
@@ -189,7 +187,7 @@ class GPRegressionLearned(RegressionModel):
 
         with torch.no_grad():
             test_x_normalized = self._normalize_data(test_x)
-            test_x_tensor = torch.from_numpy(test_x_normalized).contiguous().float().to(device)
+            test_x_tensor = torch.from_numpy(test_x_normalized).contiguous().float()
 
             pred_dist = self.likelihood(self.model(test_x_tensor))
             pred_dist_transformed = AffineTransformedDistribution(pred_dist, normalization_mean=self.y_mean,
@@ -215,6 +213,7 @@ class GPRegressionLearned(RegressionModel):
     def _vectorize_pred_dist(self, pred_dist):
         return torch.distributions.Normal(pred_dist.mean, pred_dist.stddev)
 
+
 if __name__ == "__main__":
     import torch
     import numpy as np
@@ -227,7 +226,7 @@ if __name__ == "__main__":
     x_data = torch.normal(mean=-1, std=2.0, size=(n_train_samples + n_test_samples, 1))
     W = torch.tensor([[0.6]])
     b = torch.tensor([-1])
-    y_data = x_data.matmul(W.T) + torch.sin((0.6 * x_data)**2) + b + torch.normal(mean=0.0, std=0.1, size=(n_train_samples + n_test_samples, 1))
+    y_data = x_data.matmul(W.T) + torch.sin((0.6 * x_data) ** 2) + b + torch.normal(mean=0.0, std=0.1, size=(n_train_samples + n_test_samples, 1))
 
     x_data_train, x_data_test = x_data[:n_train_samples].numpy(), x_data[n_train_samples:].numpy()
     y_data_train, y_data_test = y_data[:n_train_samples].numpy(), y_data[n_train_samples:].numpy()
@@ -235,7 +234,6 @@ if __name__ == "__main__":
     gp_mll = GPRegressionLearned(x_data_train, y_data_train, mean_module='NN', covar_module='SE', mean_nn_layers=(32, 32, 32, 32), weight_decay=0.5,
                                  num_iter_fit=10000)
     gp_mll.fit(x_data_test, y_data_test)
-
 
     x_plot = np.linspace(6, -6, num=200)
     gp_mll.confidence_intervals(x_plot)
@@ -246,7 +244,7 @@ if __name__ == "__main__":
     plt.scatter(x_data_test, y_data_test)
     plt.plot(x_plot, pred_mean)
 
-    #lcb, ucb = pred_mean - pred_std, pred_mean + pred_std
+    # lcb, ucb = pred_mean - pred_std, pred_mean + pred_std
     lcb, ucb = gp_mll.confidence_intervals(x_plot)
     plt.fill_between(x_plot, lcb, ucb, alpha=0.4)
     plt.show()

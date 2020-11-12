@@ -1,10 +1,9 @@
-import numpy as np
 import os
 
+import numpy as np
 from matplotlib import pyplot as plt
+
 from experiments.util import collect_exp_results
-
-
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,11 +20,9 @@ df_aggregated = results_df.groupby(['n_train_tasks', 'weight_decay']).aggregate(
      'test_rmse': [np.mean, np.std],
      'calib_err': [np.mean, np.std]})
 
-
 n_train_tasks_list = sorted(set(df_aggregated.index.get_level_values('n_train_tasks')))
 
-metric ='test_rmse'
-
+metric = 'test_rmse'
 
 for n_train_tasks in n_train_tasks_list:
     sub_df = df_aggregated.loc[n_train_tasks]
@@ -44,7 +41,6 @@ axes[0].set_ylim((0.28, 0.78))
 
 """ ----- Cauchy Dataset ------- """
 
-
 results_df = collect_exp_results('meta-overfitting-cauchy')
 n_train_samples = 20
 results_df = results_df[results_df['n_train_samples'] == n_train_samples]
@@ -54,10 +50,9 @@ df_aggregated = results_df.groupby(['n_train_tasks', 'weight_decay']).aggregate(
      'test_rmse': [np.mean, np.std],
      'calib_err': [np.mean, np.std]})
 
-
 n_train_tasks_list = sorted(set(df_aggregated.index.get_level_values('n_train_tasks')))
 
-metric ='test_rmse'
+metric = 'test_rmse'
 
 for n_train_tasks in n_train_tasks_list:
     sub_df = df_aggregated.loc[n_train_tasks]
@@ -72,11 +67,7 @@ for n_train_tasks in n_train_tasks_list:
     axes[1].set_xscale('log')
     axes[1].set_xlabel('weight decay')
 
-
-
-
 """ ----- Swissfel Dataset ------- """
-
 
 results_df = collect_exp_results('meta-overfitting-swissfel')
 
@@ -85,8 +76,7 @@ df_aggregated = results_df.groupby(['weight_decay']).aggregate(
      'test_rmse': [np.mean, np.std],
      'calib_err': [np.mean, np.std]})
 
-
-metric ='test_rmse'
+metric = 'test_rmse'
 
 sub_df = df_aggregated
 x = sub_df.index
@@ -104,7 +94,7 @@ axes[2].set_ylim((0.39, 0.98))
 
 lines = [lines[2], lines[0], lines[1]]
 
-#plt.suptitle('Cauchy Meta-Dataset')
+# plt.suptitle('Cauchy Meta-Dataset')
 plt.legend(handles=lines, labels=('5', '10', '20'), title='number train tasks', loc='upper right')
 plt.tight_layout(rect=(0, 0, 1, 0.98))
 plt.show()

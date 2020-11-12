@@ -1,15 +1,15 @@
-import torch
-import gpytorch
 import time
-import numpy as np
 
+import gpytorch
+import numpy as np
+import torch
 from torch.distributions.multivariate_normal import MultivariateNormal
 
+from meta_learn.abstract import RegressionModelMetaLearned
 from meta_learn.models import AffineTransformedDistribution, EqualWeightedMixtureDist
 from meta_learn.random_gp import RandomGPMeta, RandomGPPosterior
 from meta_learn.util import _handle_input_dimensionality, DummyLRScheduler
-from meta_learn.abstract import RegressionModelMetaLearned
-from config import device
+
 
 class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
 
@@ -79,7 +79,6 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
             self.task_dicts.append(task_dict)
 
         self.fitted = False
-
 
     def meta_fit(self, valid_tuples=None, verbose=True, log_period=500, n_iter=None):
 
@@ -152,20 +151,20 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
         context_x, context_y = self._prepare_data_per_task(context_x, context_y)
 
         test_x = self._normalize_data(X=test_x, Y=None)
-        test_x = torch.from_numpy(test_x).float().to(device)
+        test_x = torch.from_numpy(test_x).float()
 
         with torch.no_grad():
 
             if mode == 'Bayes' or mode == 'bayes':
                 pred_dist = self.get_pred_dist(context_x, context_y, test_x, n_post_samples=n_posterior_samples)
                 pred_dist = AffineTransformedDistribution(pred_dist, normalization_mean=self.y_mean,
-                                                      normalization_std=self.y_std)
+                                                          normalization_std=self.y_std)
 
                 pred_dist = EqualWeightedMixtureDist(pred_dist, batched=True)
             else:
                 pred_dist = self.get_pred_dist_map(context_x, context_y, test_x)
                 pred_dist = AffineTransformedDistribution(pred_dist, normalization_mean=self.y_mean,
-                                                      normalization_std=self.y_std)
+                                                          normalization_std=self.y_std)
             if return_density:
                 return pred_dist
             else:
@@ -194,9 +193,9 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
 
         """ random gp model """
         self.random_gp = RandomGPMeta(size_in=self.input_dim, prior_factor=self.prior_factor,
-                                  weight_prior_std=self.weight_prior_std, bias_prior_std=self.bias_prior_std,
-                                  covar_module_str=covar_module_str, mean_module_str=mean_module_str,
-                                  mean_nn_layers=mean_nn_layers, kernel_nn_layers=kernel_nn_layers)
+                                      weight_prior_std=self.weight_prior_std, bias_prior_std=self.bias_prior_std,
+                                      covar_module_str=covar_module_str, mean_module_str=mean_module_str,
+                                      mean_nn_layers=mean_nn_layers, kernel_nn_layers=kernel_nn_layers)
 
         param_shapes_dict = self.random_gp.parameter_shapes()
 
@@ -213,6 +212,7 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
             return train_data_tuples_tiled
 
         """ define negative ELBO """
+
         def get_neg_elbo(tasks_dicts):
             # tile data to svi_batch_shape
             data_tuples_tiled = _tile_data_tuples(tasks_dicts, self.svi_batch_size)
@@ -226,6 +226,7 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
         self.get_neg_elbo = get_neg_elbo
 
         """ define predictive dist """
+
         def get_pred_dist(x_context, y_context, x_valid, n_post_samples=100):
             with torch.no_grad():
                 x_context = x_context.view(torch.Size((1,)) + x_context.shape).repeat(n_post_samples, 1, 1)
@@ -250,7 +251,6 @@ class GPRegressionMetaLearnedVI(RegressionModelMetaLearned):
                 gp, likelihood = gp_fn(x_context, y_context, train=False)
                 pred_dist = likelihood(gp(x_valid))
             return MultivariateNormal(pred_dist.loc, pred_dist.covariance_matrix[0])
-
 
         self.get_pred_dist = get_pred_dist
         self.get_pred_dist_map = get_pred_dist_map
@@ -303,7 +303,6 @@ if __name__ == "__main__":
     for prior_factor in [1e-3 / 40.]:
         gp_model = GPRegressionMetaLearnedVI(meta_train_data, num_iter_fit=2000, prior_factor=prior_factor, svi_batch_size=10, task_batch_size=2,
                                              covar_module='SE', mean_module='NN', mean_nn_layers=NN_LAYERS, kernel_nn_layers=NN_LAYERS, cov_type='diag')
-
 
         for i in range(10):
             itrs = 0

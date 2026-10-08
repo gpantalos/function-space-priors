@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-08",
+  "destination": "gpantalos/function-space-priors",
+  "original_destination_head": "f5a686ac799da3a07cce13d438c4d1d792a96226",
+  "sources": [
+    {
+      "source": "gpantalos/thesis",
+      "directory": "research/thesis",
+      "source_head": "19a7c80858cb8f41e73bfdca6b9ac8bc52bb7e82",
+      "source_tree": "2aaec71e094f6b015d7a1c289ea49212b79be844",
+      "import_commit": "67bb3a97382c6aedd560ccfb53a15aa2ceda64d8",
+      "branch_namespace": "consolidated/thesis/"
+    }
+  ],
+  "tasks": {},
+  "integration": "Separate modules share a repository and launcher. Existing destination entry points remain available. Algorithm, broker, and service runtimes remain separate.",
+  "limitations": [
+    "Credentials, installed system libraries, model weights, Atari ROMs, existing state files, external APIs and scheduled jobs require their existing setup.",
+    "No live broker, notification, model-training or external generation jobs were run during migration."
+  ]
+}

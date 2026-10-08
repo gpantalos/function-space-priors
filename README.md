@@ -65,3 +65,7 @@ Best configs are saved under `configs/<env>/<model>.yaml`.
 
 - **Toy Problems**: Curve fitting with calibrated uncertainty.
 - **Control Tasks**: Forward dynamics ($s_{t+1} | s_t, a_t$) learning from MuJoCo simulations.
+
+## Consolidated modules
+
+See [Consolidated projects](CONSOLIDATION.md) for the source projects, run commands and retained history. List commands with `uv run --no-project workspace.py --list`.

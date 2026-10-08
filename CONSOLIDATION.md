@@ -22,3 +22,7 @@ Original default-branch commits are ancestors of the import merge commits. Other
 ## Runtime scope
 
 The consolidation keeps distinct algorithms, brokers and services as separately invoked modules. It does not combine them into a single training loop, trading engine or web app. External credentials, datasets, weights, native libraries and schedules still require setup. Flight notification delivery and stock messaging were unfinished in the source projects. No live broker, outbound notification, paid generation or training job was started during the migration.
+
+## Thesis methods
+
+The research/thesis directory retains the PACOH, FVI, functional-BNN and gradient-estimator implementations with their original imports and environment requirements. This is a complete research-source consolidation; those methods were not rewritten as fpbnn CLI commands or evaluated against the current TensorFlow environment.
